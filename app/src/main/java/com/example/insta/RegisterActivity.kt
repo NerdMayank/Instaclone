@@ -1,5 +1,7 @@
 package com.example.insta
 
+import android.app.Dialog
+import android.app.ProgressDialog
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -21,7 +23,7 @@ class RegisterActivity : AppCompatActivity() {
     private lateinit var password: EditText
     private lateinit var register: Button
     private lateinit var loginUser: TextView
-
+    private lateinit var mProgress: Dialog
     private lateinit var mRootRef: DatabaseReference
     private lateinit var mAuth: FirebaseAuth
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,6 +39,8 @@ class RegisterActivity : AppCompatActivity() {
 
         mRootRef = FirebaseDatabase.getInstance().reference
         mAuth = FirebaseAuth.getInstance()
+
+
 
         loginUser.setOnClickListener {
             startActivity(Intent(this@RegisterActivity, LoginActivity::class.java))
@@ -67,22 +71,38 @@ class RegisterActivity : AppCompatActivity() {
         email: String,
         password: String
     ) {
+        showProgressDialog()
         mAuth.createUserWithEmailAndPassword(email,password).addOnSuccessListener {
             val map= HashMap<String, Any>()
             map["name"] = name
             map["email"]=email
             map["username"]=userName
             map["id"]=mAuth.currentUser!!.uid
+            map["bio"]=""
+            map["imageUrl"]="default"
 
             mRootRef.child("Users").child(mAuth.currentUser!!.uid).setValue(map).addOnCompleteListener {
                 if(it.isSuccessful){
+                    dismissProgressDialog()
                     Toast.makeText(this,"Update the profile",Toast.LENGTH_SHORT).show()
                     startActivity(Intent(this,MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK and Intent.FLAG_ACTIVITY_CLEAR_TOP))
                     finish()
                 }
             }
         }.addOnFailureListener {
+            dismissProgressDialog()
             Toast.makeText(this,it.message,Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showProgressDialog(){
+        mProgress=Dialog(this)
+        mProgress.setContentView(R.layout.progress_dialog)
+        mProgress.show()
+    }
+    private fun dismissProgressDialog(){
+        if(mProgress.isShowing){
+            mProgress.dismiss()
         }
     }
 }
